@@ -34,7 +34,7 @@ tailwind.config = { theme: { extend: {
       <button data-nav="history" class="nav-btn">История</button>
     </nav>
   </div>
-  <div class="bg-surface text-muted text-xs px-4 py-2 text-center border-b border-surface2">
+  <div id="banner" class="bg-surface text-muted text-xs px-4 py-2 text-center border-b border-surface2">
     Демо-режим: искусственный интеллект не подключён. Результат — простая автоматическая выжимка.
   </div>
 </header>
@@ -89,7 +89,7 @@ tailwind.config = { theme: { extend: {
     </div>
 
     <button id="run" class="btn-primary w-full">
-      <i data-lucide="sparkles" class="w-5 h-5"></i><span>Обработать (демо)</span>
+      <i data-lucide="sparkles" class="w-5 h-5"></i><span id="runLabel">Обработать (демо)</span>
     </button>
   </section>
 
@@ -101,7 +101,7 @@ tailwind.config = { theme: { extend: {
     <div class="card">
       <span id="resMode" class="inline-block text-xs bg-surface2 text-accent rounded-full px-3 py-1"></span>
       <h2 id="resTitle" class="text-xl font-semibold text-snow mt-3"></h2>
-      <p class="text-xs text-muted mt-2 border-l-2 border-accent/50 pl-3">
+      <p id="resNotice" class="text-xs text-muted mt-2 border-l-2 border-accent/50 pl-3">
         Демонстрационный результат. Он собран простым алгоритмом, а не искусственным интеллектом, и может быть неточным.
       </p>
       <div id="resBody" class="mt-4 space-y-4 text-[15px] leading-relaxed"></div>
