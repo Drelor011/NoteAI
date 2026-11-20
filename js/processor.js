@@ -1,6 +1,6 @@
-// Модуль обработки. Сейчас — ДЕМО без ИИ. Для подключения ИИ замените тело processText:
-// отправьте text и opts на ВАШ сервер (ключи API в браузере хранить нельзя) и верните объект того же формата.
-export const AI_ENABLED = false;
+// Вставьте сюда адрес вашего Cloudflare Worker (см. worker/worker.js). Пока пусто — работает демо без ИИ.
+export const WORKER_URL = '';
+export const AI_ENABLED = Boolean(WORKER_URL);
 
 export const MODES = {
   summary: { label: 'Краткий конспект', hint: 'Структура и основные факты' },
@@ -13,8 +13,23 @@ export const LANGS = { auto: 'Автоматически', ru: 'Русский',
 
 /** Формат результата: { title, demo, sections: [{ heading, paragraph?, items? }] } */
 export async function processText(text, opts) {
-  await new Promise((r) => setTimeout(r, 400)); // имитация ожидания
-  return AI_ENABLED ? null : demoProcess(text, opts);
+  if (!AI_ENABLED) {
+    await new Promise((r) => setTimeout(r, 400));
+    return demoProcess(text, opts);
+  }
+  let res;
+  try {
+    res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text.slice(0, 30000), ...opts }),
+    });
+  } catch {
+    throw new Error('Нет связи с сервером. Проверьте интернет.');
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Сервер вернул ошибку. Попробуйте позже.');
+  return { ...data, demo: false, mode: opts.mode, length: opts.length };
 }
 
 function demoProcess(text, { mode, length }) {
