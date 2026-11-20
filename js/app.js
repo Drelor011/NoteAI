@@ -1,6 +1,6 @@
 import { $, h, fmtSize, fmtDate, toast, copyText, downloadTxt, refreshIcons } from './utils.js';
 import { parseFile } from './fileParser.js';
-import { MODES, LENGTHS, LANGS, processText } from './processor.js';
+import { MODES, LENGTHS, LANGS, AI_ENABLED, processText } from './processor.js';
 import * as history from './history.js';
 
 const state = { mode: 'summary', length: 's', lang: 'auto', file: null, current: null };
@@ -105,7 +105,10 @@ function startRun() {
 
 function renderResult({ result, opts }) {
   $('#resTitle').textContent = result.title;
-  $('#resMode').textContent = `${MODES[opts.mode].label} · ${LENGTHS[opts.length].label} · демо`;
+  $('#resMode').textContent = `${MODES[opts.mode].label} · ${LENGTHS[opts.length].label}${result.demo ? ' · демо' : ''}`;
+  $('#resNotice').textContent = result.demo
+    ? 'Демонстрационный результат. Он собран простым алгоритмом, а не искусственным интеллектом, и может быть неточным.'
+    : 'Результат создан ИИ (Gemini). Проверяйте важные факты, даты и цифры.';
   const body = $('#resBody');
   body.replaceChildren();
   result.sections.forEach((s) => {
@@ -119,13 +122,13 @@ function renderResult({ result, opts }) {
     }
     body.append(block);
   });
-  if (opts.lang !== 'auto') {
+  if (result.demo && opts.lang !== 'auto') {
     body.append(h('p', 'text-xs text-muted', `Язык «${LANGS[opts.lang]}» в демо не применяется: текст остался на языке оригинала.`));
   }
 }
 
 function toPlainText({ result, opts }) {
-  const lines = [result.title, `[ДЕМО-РЕЖИМ, без ИИ] ${MODES[opts.mode].label}`, ''];
+  const lines = [result.title, `${result.demo ? '[ДЕМО-РЕЖИМ, без ИИ]' : '[Создано ИИ Gemini]'} ${MODES[opts.mode].label}`, ''];
   result.sections.forEach((s) => {
     lines.push(s.heading);
     if (s.paragraph) lines.push(s.paragraph);
@@ -166,6 +169,10 @@ function renderHistory() {
 
 /* ---------- Инициализация ---------- */
 function init() {
+  $('#banner').textContent = AI_ENABLED
+    ? 'Текст обрабатывает ИИ (Gemini) через защищённый сервер. Проверяйте важные факты.'
+    : 'Демо-режим: искусственный интеллект не подключён. Результат — простая автоматическая выжимка.';
+  $('#runLabel').textContent = AI_ENABLED ? 'Обработать' : 'Обработать (демо)';
   buildOptions('#modes', MODES, 'mode');
   buildOptions('#lengths', LENGTHS, 'length');
   buildOptions('#langs', LANGS, 'lang');
