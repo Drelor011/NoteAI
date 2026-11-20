@@ -1,5 +1,5 @@
 // Вставьте сюда адрес вашего Cloudflare Worker (см. worker/worker.js). Пока пусто — работает демо без ИИ.
-export const WORKER_URL = 'https://noteai.drelor011.workers.dev/';
+export const WORKER_URL = 'https://wispy-dust-5605.drelor011.workers.dev/ ';
 export const AI_ENABLED = Boolean(WORKER_URL);
 
 export const MODES = {
