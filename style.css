@@ -1,0 +1,27 @@
+html { -webkit-tap-highlight-color: transparent; }
+body { overflow-x: hidden; }
+.card { background:#1F2937; border:1px solid #374151; border-radius:16px; padding:16px; box-shadow:0 1px 2px rgba(0,0,0,.25); }
+.lbl { display:block; font-size:13px; font-weight:500; color:#9CA3AF; margin-bottom:8px; }
+.field { width:100%; background:#0B1220; color:#E7E5E0; border:1px solid #374151; border-radius:12px; padding:12px; font-size:16px; resize:vertical; }
+.field::placeholder { color:#9CA3AF; }
+.drop { display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; padding:24px 12px; border:1.5px dashed #374151; border-radius:12px; cursor:pointer; transition:border-color .15s, background .15s; }
+.drop:hover, .drop.over { border-color:#D6D3CD; background:#0B1220; }
+.btn-primary, .btn-sec { display:flex; align-items:center; justify-content:center; gap:8px; min-height:48px; padding:0 16px; border-radius:12px; font-weight:500; font-size:15px; transition:opacity .15s, background .15s; }
+.btn-primary { background:#D6D3CD; color:#111827; }
+.btn-primary:hover { opacity:.9; }
+.btn-primary:disabled { opacity:.5; cursor:wait; }
+.btn-sec { background:#374151; color:#F9FAFB; }
+.btn-sec:hover { background:#4b5563; }
+.opt { min-height:44px; padding:8px 12px; border-radius:12px; border:1px solid #374151; background:#111827; color:#9CA3AF; font-size:14px; text-align:left; transition:all .15s; }
+.opt[aria-pressed="true"] { border-color:#D6D3CD; color:#F9FAFB; background:#374151; }
+.opt small { display:block; font-size:12px; color:#9CA3AF; margin-top:2px; }
+.nav-btn { padding:6px 12px; border-radius:8px; font-size:14px; color:#9CA3AF; }
+.nav-btn:hover, .nav-btn.active { color:#F9FAFB; background:#1F2937; }
+.tab { display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 0; font-size:12px; color:#9CA3AF; min-height:56px; justify-content:center; }
+.tab.active { color:#F9FAFB; }
+.view:not(.hidden) { animation:in .25s ease-out; }
+.toast { background:#F9FAFB; color:#111827; padding:10px 16px; border-radius:12px; font-size:14px; box-shadow:0 8px 24px rgba(0,0,0,.35); animation:in .2s ease-out; }
+.toast.error { background:#374151; color:#F9FAFB; border:1px solid #D6D3CD; }
+@keyframes in { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+:focus-visible { outline:2px solid #D6D3CD; outline-offset:2px; }
+@media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<title>Note AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+  colors: { bg: '#111827', deep: '#0B1220', surface: '#1F2937', surface2: '#374151',
+            ink: '#E7E5E0', muted: '#9CA3AF', snow: '#F9FAFB', accent: '#D6D3CD' } } } };
+</script>
+<link rel="stylesheet" href="css/style.css">
+<script defer src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/tesseract.min.js"></script>
+<script type="module" src="js/app.js"></script>
+</head>
+<body class="bg-bg text-ink font-sans min-h-screen">
+
+<header class="sticky top-0 z-20 bg-deep/95 border-b border-surface2 backdrop-blur">
+  <div class="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
+    <button data-nav="home" class="flex items-center gap-2 font-semibold text-snow">
+      <i data-lucide="notebook-pen" class="w-5 h-5 text-accent"></i> Note AI
+    </button>
+    <nav class="hidden md:flex gap-1">
+      <button data-nav="home" class="nav-btn">Главная</button>
+      <button data-nav="history" class="nav-btn">История</button>
+    </nav>
+  </div>
+  <div class="bg-surface text-muted text-xs px-4 py-2 text-center border-b border-surface2">
+    Демо-режим: искусственный интеллект не подключён. Результат — простая автоматическая выжимка.
+  </div>
+</header>
+
+<main class="max-w-3xl mx-auto px-4 py-5 pb-28 md:pb-10">
+
+  <!-- ГЛАВНАЯ -->
+  <section id="view-home" class="view space-y-5">
+    <div>
+      <h1 class="text-2xl font-semibold text-snow">Сократите текст за минуту</h1>
+      <p class="text-muted text-sm mt-1">Вставьте текст или загрузите PDF, DOCX, TXT или фото с текстом.</p>
+    </div>
+
+    <div class="card">
+      <label for="src" class="lbl">Исходный текст</label>
+      <textarea id="src" rows="8" class="field" placeholder="Вставьте текст сюда (от 50 символов)…"></textarea>
+      <div class="flex justify-between text-xs text-muted mt-2">
+        <span id="count">0 символов</span>
+        <button id="clearSrc" class="hover:text-snow">Очистить</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="lbl">Файл</span>
+      <label id="drop" for="file" class="drop">
+        <i data-lucide="upload" class="w-6 h-6 text-accent"></i>
+        <span class="text-sm text-snow">Выберите файл или перетащите сюда</span>
+        <span class="text-xs text-muted">PDF, DOCX, TXT, JPG, PNG, WEBP · до 15 МБ</span>
+      </label>
+      <input id="file" type="file" class="sr-only" accept=".pdf,.docx,.txt,image/*">
+      <div id="fileInfo" class="hidden mt-3 flex items-center gap-3 bg-surface2 rounded-xl p-3">
+        <i data-lucide="file-text" class="w-5 h-5 text-accent shrink-0"></i>
+        <div class="min-w-0 flex-1">
+          <p id="fileName" class="text-sm text-snow truncate"></p>
+          <p id="fileSize" class="text-xs text-muted"></p>
+        </div>
+        <button id="removeFile" class="p-2 -m-2 text-muted hover:text-snow" aria-label="Удалить файл">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div id="progress" class="hidden mt-3">
+        <div class="h-1.5 bg-surface2 rounded-full overflow-hidden"><div id="bar" class="h-full bg-accent transition-all" style="width:0"></div></div>
+        <p id="progressText" class="text-xs text-muted mt-1">Читаем файл…</p>
+      </div>
+      <p id="err" class="hidden mt-3 text-sm text-snow bg-surface2 border border-accent/40 rounded-xl p-3" role="alert"></p>
+    </div>
+
+    <div class="card space-y-4">
+      <div><span class="lbl">Режим</span><div id="modes" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div></div>
+      <div><span class="lbl">Длина</span><div id="lengths" class="grid grid-cols-3 gap-2"></div></div>
+      <div><span class="lbl">Язык результата</span><div id="langs" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div></div>
+    </div>
+
+    <button id="run" class="btn-primary w-full">
+      <i data-lucide="sparkles" class="w-5 h-5"></i><span>Обработать (демо)</span>
+    </button>
+  </section>
+
+  <!-- РЕЗУЛЬТАТ -->
+  <section id="view-result" class="view hidden space-y-4">
+    <button data-nav="home" id="back" class="flex items-center gap-1 text-sm text-muted hover:text-snow">
+      <i data-lucide="arrow-left" class="w-4 h-4"></i> Редактировать исходный текст
+    </button>
+    <div class="card">
+      <span id="resMode" class="inline-block text-xs bg-surface2 text-accent rounded-full px-3 py-1"></span>
+      <h2 id="resTitle" class="text-xl font-semibold text-snow mt-3"></h2>
+      <p class="text-xs text-muted mt-2 border-l-2 border-accent/50 pl-3">
+        Демонстрационный результат. Он собран простым алгоритмом, а не искусственным интеллектом, и может быть неточным.
+      </p>
+      <div id="resBody" class="mt-4 space-y-4 text-[15px] leading-relaxed"></div>
+    </div>
+    <div class="grid grid-cols-2 gap-2">
+      <button id="copy" class="btn-sec"><i data-lucide="copy" class="w-4 h-4"></i>Скопировать</button>
+      <button id="dl" class="btn-sec"><i data-lucide="download" class="w-4 h-4"></i>Скачать TXT</button>
+      <button id="redo" class="btn-sec col-span-2"><i data-lucide="refresh-cw" class="w-4 h-4"></i>Повторить обработку</button>
+    </div>
+  </section>
+
+  <!-- ИСТОРИЯ -->
+  <section id="view-history" class="view hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <h1 class="text-2xl font-semibold text-snow">История</h1>
+      <button id="clearAll" class="text-sm text-muted hover:text-snow">Очистить всё</button>
+    </div>
+    <div id="histList" class="space-y-2"></div>
+    <div id="histEmpty" class="card text-center text-sm text-muted hidden">
+      Здесь появятся обработанные материалы. Результаты хранятся только в этом браузере.
+    </div>
+  </section>
+</main>
+
+<nav class="md:hidden fixed bottom-0 inset-x-0 z-20 bg-deep border-t border-surface2 grid grid-cols-2 pb-[env(safe-area-inset-bottom)]">
+  <button data-nav="home" class="tab"><i data-lucide="house" class="w-5 h-5"></i>Главная</button>
+  <button data-nav="history" class="tab"><i data-lucide="history" class="w-5 h-5"></i>История</button>
+</nav>
+<div id="toasts" class="fixed left-0 right-0 bottom-20 md:bottom-6 z-30 flex flex-col items-center gap-2 px-4 pointer-events-none"></div>
+</body>
+</html>
