@@ -621,7 +621,7 @@ function friendlyServerError(raw) {
     return 'Модель Gemini, указанная в Worker\'е, устарела — Google закрыл её для новых ключей (404). Обновите код Worker\'а из worker.js последней версии: он использует актуальную модель и умеет сам переключаться на замену, которую Google подсказывает в ошибке. Пока можно нажать «Обработать без ИИ».';
   }
   if (/high demand|перегружен|503/i.test(raw)) {
-    return 'Модель Gemini сейчас перегружена — это временная проблема на стороне Google. Worker уже сделал несколько попыток; подождите около минуты и нажмите «Повторить», либо нажмите «Обработать без ИИ».';
+    return 'Gemini сейчас перегружен — это временная проблема на стороне Google. Worker уже сделал все попытки, включая запасной ИИ (если он подключён — переменная FALLBACK_AI_KEY, инструкция в README). Подождите около минуты и нажмите «Повторить», либо нажмите «Обработать без ИИ».';
   }
   if (/не задан ключ|GEMINI_API_KEY/i.test(raw)) {
     return 'На сервере не задан ключ Gemini API (переменная GEMINI_API_KEY в настройках Worker\'а). Инструкция — в README сайта.';
@@ -917,13 +917,14 @@ function renderResult({ result, opts }) {
   const badges = $('#resBadges');
   badges.replaceChildren();
   badges.append(h('span', 'badge', `${MODES[opts.mode].label} · ${LENGTHS[opts.length].label}`));
-  badges.append(h('span', `badge ${result.demo ? 'badge-demo' : 'badge-ai'}`, result.demo ? 'Демо' : 'Gemini'));
+  const aiBrand = result.demo ? 'Демо' : (result.providerBrand || 'Gemini');
+  badges.append(h('span', `badge ${result.demo ? 'badge-demo' : 'badge-ai'}`, aiBrand));
 
   $('#resTitle').textContent = result.title;
   $('#resNotice').className = `notice ${result.demo ? 'demo' : 'ai'}`;
   $('#resNoticeText').textContent = result.demo
     ? 'Демонстрационный результат. Он собран простым алгоритмом, а не искусственным интеллектом, и может быть неточным.'
-    : 'Результат создан ИИ (Gemini). Проверяйте важные факты, даты и цифры.';
+    : `Результат создан ИИ: ${aiBrand}${result.providerModel ? ` (${result.providerModel})` : ''}. Проверяйте важные факты, даты и цифры.`;
 
   const body = $('#resBody');
   body.replaceChildren();
@@ -944,7 +945,7 @@ function renderResult({ result, opts }) {
 }
 
 function toPlainText({ result, opts }) {
-  const lines = [result.title, `${result.demo ? '[ДЕМО-РЕЖИМ, без ИИ]' : '[Создано ИИ Gemini]'} ${MODES[opts.mode].label}`, ''];
+  const lines = [result.title, `${result.demo ? '[ДЕМО-РЕЖИМ, без ИИ]' : `[Создано ИИ: ${result.providerBrand || 'Gemini'}]`} ${MODES[opts.mode].label}`, ''];
   result.sections.forEach((s) => {
     lines.push(s.heading);
     if (s.paragraph) lines.push(s.paragraph);
