@@ -479,7 +479,7 @@ main{padding:clamp(24px,5vw,44px) 0 72px}
 // Адрес Cloudflare Worker, который проксирует запросы к Gemini API.
 // Ключ API хранится в Worker'е, а не в браузере. Чтобы вернуться в
 // демо-режим без ИИ, достаточно оставить строку пустой: ''.
-const WORKER_URL = 'https://wispy-dust-5605.drelor011.workers.dev/';
+const WORKER_URL = 'https://noteai2.drelor011.workers.dev/';
 // ?demo=1 в адресе страницы включает демо-режим даже при настроенном Worker'е.
 const FORCE_DEMO = new URLSearchParams(location.search).has('demo');
 const AI_ENABLED = Boolean(WORKER_URL) && !FORCE_DEMO;
