@@ -606,7 +606,24 @@ function networkErrorMsg() {
   if (location.protocol === 'file:') {
     return 'Не удалось связаться с Worker: страница открыта локально (file://), а Worker отвечает только на запросы с домена https://drelor011.github.io. Загрузите страницу на GitHub Pages или нажмите «Обработать без ИИ».';
   }
+  if (location.origin === 'https://drelor011.github.io') {
+    return 'Не удалось связаться с Worker — сервер обработки недоступен. Проверьте интернет; если с ним всё в порядке, проверьте статус Worker в панели Cloudflare (он мог быть выключен).';
+  }
   return `Не удалось связаться с Worker. Проверьте интернет, а также домен страницы: Worker разрешает только https://drelor011.github.io (сейчас: ${location.origin || 'неизвестен'}).`;
+}
+
+/** Понятные формулировки для типовых ошибок сервера обработки. */
+function friendlyServerError(raw) {
+  if (/location is not supported/i.test(raw)) {
+    return 'Gemini недоступен из региона, где сейчас выполняется Worker (ограничение Google: «User location is not supported»). Решение — бесплатный Cloudflare AI Gateway, пошагово в README. Пока можно нажать «Обработать без ИИ».';
+  }
+  if (/high demand|перегружен|503/i.test(raw)) {
+    return 'Модель Gemini сейчас перегружена — это временная проблема на стороне Google. Worker уже сделал несколько попыток; подождите около минуты и нажмите «Повторить», либо нажмите «Обработать без ИИ».';
+  }
+  if (/не задан ключ|GEMINI_API_KEY/i.test(raw)) {
+    return 'На сервере не задан ключ Gemini API (переменная GEMINI_API_KEY в настройках Worker\'а). Инструкция — в README сайта.';
+  }
+  return raw;
 }
 
 /** Формат результата: { title, demo, sections: [{ heading, paragraph?, items? }] } */
@@ -626,7 +643,7 @@ async function processText(text, opts) {
     throw new Error(networkErrorMsg());
   }
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || 'Сервер вернул ошибку. Попробуйте позже.');
+  if (!res.ok) throw new Error(friendlyServerError(data.error || 'Сервер вернул ошибку. Попробуйте позже.'));
   return { ...data, demo: false, mode: opts.mode, length: opts.length };
 }
 
