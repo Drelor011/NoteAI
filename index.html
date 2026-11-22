@@ -617,6 +617,9 @@ function friendlyServerError(raw) {
   if (/location is not supported/i.test(raw)) {
     return 'Gemini недоступен из региона, где сейчас выполняется Worker (ограничение Google: «User location is not supported»). Решение — бесплатный Cloudflare AI Gateway, пошагово в README. Пока можно нажать «Обработать без ИИ».';
   }
+  if (/no longer available/i.test(raw)) {
+    return 'Модель Gemini, указанная в Worker\'е, устарела — Google закрыл её для новых ключей (404). Обновите код Worker\'а из worker.js последней версии: он использует актуальную модель и умеет сам переключаться на замену, которую Google подсказывает в ошибке. Пока можно нажать «Обработать без ИИ».';
+  }
   if (/high demand|перегружен|503/i.test(raw)) {
     return 'Модель Gemini сейчас перегружена — это временная проблема на стороне Google. Worker уже сделал несколько попыток; подождите около минуты и нажмите «Повторить», либо нажмите «Обработать без ИИ».';
   }
