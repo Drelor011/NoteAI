@@ -472,11 +472,11 @@ main{padding:clamp(24px,5vw,44px) 0 72px}
 
 /* ============================================================
    Note AI — приложение. Все модули объединены в один файл.
-   Интеграция: Gemini API через Cloudflare Worker (см. WORKER_URL).
+   Интеграция: Groq API через Cloudflare Worker (см. WORKER_URL).
    ============================================================ */
 
 /* ---------- Конфигурация ---------- */
-// Адрес Cloudflare Worker, который проксирует запросы к Gemini API.
+// Адрес Cloudflare Worker, который проксирует запросы к Groq API.
 // Ключ API хранится в Worker'е, а не в браузере. Чтобы вернуться в
 // демо-режим без ИИ, достаточно оставить строку пустой: ''.
 const WORKER_URL = 'https://noteai2.drelor011.workers.dev/';
@@ -599,7 +599,7 @@ function downloadTxt(name, text) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/* ---------- Обработка: Gemini через Cloudflare Worker ---------- */
+/* ---------- Обработка: Groq через Cloudflare Worker ---------- */
 
 /** Подсказка, когда браузер не смог отправить запрос или прочитать ответ Worker'а. */
 function networkErrorMsg() {
@@ -614,21 +614,21 @@ function networkErrorMsg() {
 
 /** Понятные формулировки для типовых ошибок сервера обработки. */
 function friendlyServerError(raw) {
+  if (/перегружен|исчерпан лимит|high demand|rate limit|too many requests|429|503|524|не отвечает|тайм-аут|timed out/i.test(raw)) {
+    return 'Groq перегружен или исчерпан лимит запросов — это временно. Worker уже сделал все попытки: основную модель и резервную. Подождите около минуты и нажмите «Повторить», либо нажмите «Обработать без ИИ». Лимиты бесплатного тарифа — console.groq.com/settings/limits.';
+  }
+  if (/GROQ_API_KEY|FALLBACK_AI_KEY|отклонил ключ|не задан ключ|Invalid API Key/i.test(raw)) {
+    return 'Проверьте ключ Groq в настройках Worker\'а: переменная GROQ_API_KEY (ключ вида gsk_… из console.groq.com → API Keys). Прежняя переменная FALLBACK_AI_KEY тоже подходит. Инструкция — в README сайта.';
+  }
+  if (/Ошибка Groq 404|not found|decommissioned|no longer available/i.test(raw)) {
+    return 'Модель Groq из Worker\'а недоступна (404) — обычно её переименовали или закрыли. Обновите код Worker\'а из worker.js последней версии: он умеет сам переходить на замену, которую Groq подсказывает. Если не помогло — задайте GROQ_MODEL вручную (список: console.groq.com/docs/models). Пока можно нажать «Обработать без ИИ».';
+  }
   if (/location is not supported/i.test(raw)) {
-    return 'Gemini недоступен из региона, где сейчас выполняется Worker (ограничение Google: «User location is not supported»). Решение — бесплатный Cloudflare AI Gateway, пошагово в README. Пока можно нажать «Обработать без ИИ».';
-  }
-  if (/no longer available/i.test(raw)) {
-    return 'Модель Gemini, указанная в Worker\'е, устарела — Google закрыл её для новых ключей (404). Обновите код Worker\'а из worker.js последней версии: он использует актуальную модель и умеет сам переключаться на замену, которую Google подсказывает в ошибке. Пока можно нажать «Обработать без ИИ».';
-  }
-  if (/high demand|перегружен|503|524|не отвечает|тайм-аут|timed out/i.test(raw)) {
-    return 'Gemini перегружен или отвечает слишком медленно — это временная проблема на стороне Google. Worker уже сделал все попытки, включая запасной ИИ (если он подключён — переменная FALLBACK_AI_KEY, инструкция в README). Подождите около минуты и нажмите «Повторить», либо нажмите «Обработать без ИИ».';
-  }
-  if (/не задан ключ|GEMINI_API_KEY/i.test(raw)) {
-    return 'На сервере не задан ключ Gemini API (переменная GEMINI_API_KEY в настройках Worker\'а). Инструкция — в README сайта.';
+    return 'Worker ещё работает на старом коде с Gemini (региональное ограничение Google). Обновите код Worker\'а из worker.js последней версии — теперь он вызывает Groq без региональных ограничений. Пока можно нажать «Обработать без ИИ».';
   }
   if (/Сервер вернул ошибку/.test(raw)) {
     // В теле ответа не наш JSON: долгий запрос отрезал сам край Cloudflare (524).
-    return 'Сервер обработки не успел ответить за отведённое время (тайм-аут Cloudflare 524). Обновите код Worker\'а из worker.js последней версии — там тайм-ауты и запасной ИИ, и такое больше не должно повторяться. Пока нажмите «Повторить» через минуту или «Обработать без ИИ».';
+    return 'Сервер обработки не успел ответить за отведённое время (тайм-аут Cloudflare 524). Обновите код Worker\'а из worker.js последней версии — там тайм-ауты на каждый вызов, и такое больше не должно повторяться. Пока нажмите «Повторить» через минуту или «Обработать без ИИ».';
   }
   return raw;
 }
@@ -921,7 +921,7 @@ function renderResult({ result, opts }) {
   const badges = $('#resBadges');
   badges.replaceChildren();
   badges.append(h('span', 'badge', `${MODES[opts.mode].label} · ${LENGTHS[opts.length].label}`));
-  const aiBrand = result.demo ? 'Демо' : (result.providerBrand || 'Gemini');
+  const aiBrand = result.demo ? 'Демо' : (result.providerBrand || 'Groq');
   badges.append(h('span', `badge ${result.demo ? 'badge-demo' : 'badge-ai'}`, aiBrand));
 
   $('#resTitle').textContent = result.title;
@@ -949,7 +949,7 @@ function renderResult({ result, opts }) {
 }
 
 function toPlainText({ result, opts }) {
-  const lines = [result.title, `${result.demo ? '[ДЕМО-РЕЖИМ, без ИИ]' : `[Создано ИИ: ${result.providerBrand || 'Gemini'}]`} ${MODES[opts.mode].label}`, ''];
+  const lines = [result.title, `${result.demo ? '[ДЕМО-РЕЖИМ, без ИИ]' : `[Создано ИИ: ${result.providerBrand || 'Groq'}]`} ${MODES[opts.mode].label}`, ''];
   result.sections.forEach((s) => {
     lines.push(s.heading);
     if (s.paragraph) lines.push(s.paragraph);
@@ -993,9 +993,9 @@ function renderHistory() {
 /* Статус ИИ: шапка + подпись под кнопкой + надпись на кнопке */
 function refreshAiUi() {
   $('#statusDot').className = `dot ${aiEnabled ? 'ai' : 'demo'}`;
-  $('#statusLabel').textContent = aiEnabled ? 'Gemini подключён' : 'Демо-режим';
+  $('#statusLabel').textContent = aiEnabled ? 'Groq подключён' : 'Демо-режим';
   $('#statusNote').textContent = aiEnabled
-    ? 'Текст обрабатывает ИИ (Gemini) через защищённый сервер. Проверяйте важные факты.'
+    ? 'Текст обрабатывает ИИ (Groq) через защищённый сервер. Проверяйте важные факты.'
     : 'Демо-режим: искусственный интеллект не подключён. Результат — простая автоматическая выжимка.';
   $('#runLabel').textContent = aiEnabled ? 'Обработать' : 'Обработать (демо)';
 }
